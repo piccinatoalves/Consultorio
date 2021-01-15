@@ -1,11 +1,11 @@
 package com.aula.consultorio.consultorio
 
 import android.app.DatePickerDialog
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.DatePicker
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.aula.consultorio.R
 import com.aula.consultorio.db.Contato
 import com.aula.consultorio.db.ContatoRepository
@@ -17,7 +17,9 @@ import java.util.*
 class ContatoActivity : AppCompatActivity() {
 
     var cal = Calendar.getInstance()
-
+    private val myFormat = "dd/MM/yyyy : HH:mm:ss" // mention the format you need
+    private val sdf = SimpleDateFormat(myFormat, Locale.US)
+    private var contato: Contato? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contato)
@@ -49,15 +51,21 @@ class ContatoActivity : AppCompatActivity() {
         })
 
         btnCadastro.setOnClickListener{
-            val contato = Contato(
-                nome = txtNome.text?.toString(),
-                endereco = txtEndereco.text?.toString(),
-                email = txtEmail.text?.toString(),
-                telefone = txtTelefone.text?.toString()?.toLong(),
-                dataNascimento = cal.timeInMillis,
-                site = txtSite.text?.toString()
-            )
-            ContatoRepository(this).create(contato)
+
+            contato?.nome = txtNome.text?.toString()
+            contato?.endereco = txtEndereco.text?.toString()
+            contato?.email = txtEmail.text?.toString()
+            contato?.telefone = txtTelefone.text?.toString()?.toLong()
+            contato?.dataNascimento = cal.timeInMillis
+            contato?.site = txtSite.text?.toString()
+
+            if(contato?.id == 0L){
+                ContatoRepository(this).create(contato!!)
+            }else{
+                ContatoRepository(this).update(contato!!)
+            }
+
+
             //var dados = "[${txtNome.text} : ${txtEndereco.text} : ${txtEmail.text} : ${txtTelefone.text} : ${txtSite.text} : ${txtDatanascimento.text}]"
             Toast.makeText(this, "Contato Incluido Com Sucesso", Toast.LENGTH_LONG).show()
             finish()
@@ -65,17 +73,14 @@ class ContatoActivity : AppCompatActivity() {
     }
 
     private fun updateDateInView() {
-        val myFormat = "dd/MM/yyyy : HH:mm:ss" // mention the format you need
-        val sdf = SimpleDateFormat(myFormat, Locale.US)
+
         txtDatanascimento.text = sdf.format(cal.getTime())
     }
 
     override fun onResume() {
         super.onResume()
 
-        val contato = intent?.getSerializableExtra("contato")
-        val myFormat = "dd/MM/yyyy : HH:mm:ss" // mention the format you need
-        val sdf = SimpleDateFormat(myFormat, Locale.US)
+        contato = intent?.getSerializableExtra("contato") as Contato?
 
         if(contato != null){
             contato as Contato
@@ -84,8 +89,16 @@ class ContatoActivity : AppCompatActivity() {
             txtTelefone.setText(contato?.telefone?.toString())
             txtEndereco.setText(contato?.endereco)
             txtSite.setText(contato?.site)
-            txtDatanascimento.setText(sdf.format(contato?.dataNascimento))
 
+            if(contato?.dataNascimento != null){
+                txtDatanascimento.setText(sdf.format(contato?.dataNascimento))
+            }else{
+                txtDatanascimento.setText(sdf.format(Date()))
+            }
+
+
+        }else{
+            contato = Contato()
         }
 
     }
